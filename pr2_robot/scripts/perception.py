@@ -78,12 +78,19 @@ def pcl_callback(pcl_msg):
     filter_axis = 'z'
     passthrough_Z.set_filter_field_name(filter_axis)
     axis_min = 0.6
-    axis_max = 1.1
+    axis_max = 0.85
     passthrough_Z.set_filter_limits(axis_min, axis_max)
     pcl_filtered = passthrough_Z.filter()
 
-    # TODO: filter out left and right borders of camera image
-    # portion of the bin is currently identified as an object cluster
+    # Filter along X axis to remove bins, leaving only what is on the table
+    passthrough_X = pcl_filtered.make_passthrough_filter()
+    filter_axis = 'x'
+    passthrough_X.set_filter_field_name(filter_axis)
+    axis_min = .3
+    axis_max = 1.0
+    passthrough_X.set_filter_limits(axis_min, axis_max)
+    pcl_filtered = passthrough_X.filter()
+
 
     # TODO: RANSAC Plane Segmentation
     seg = pcl_filtered.make_segmenter()
@@ -96,7 +103,7 @@ def pcl_callback(pcl_msg):
 
     inliers, coefficients = seg.segment()
 
-    # pcl_table = pcl_filtered.extract(inliers, negative=False)
+    pcl_table = pcl_filtered.extract(inliers, negative=False)
     pcl_objects = pcl_filtered.extract(inliers, negative=True)
 
     # TODO: Euclidean Clustering
@@ -142,44 +149,48 @@ def pcl_callback(pcl_msg):
 # Exercise-3 TODOs:
 
     # Classify the clusters! (loop through each detected cluster one at a time)
-    # detected_objects_labels = []
-    # detected_objects = []
+    detected_objects_labels = []
+    detected_objects = []
 
-    # for index, pts_list in enumerate(cluster_indices):
-    #     # Grab the points for the cluster
-    #     pcl_cluster = cloud_objects.extract(pts_list)
-    #     ros_cluster = pcl_to_ros(pcl_cluster)
-    #     # Compute the associated feature vector
+    for index, pts_list in enumerate(cluster_indices):
+        # Grab the points for the cluster
+        pcl_cluster = pcl_objects.extract(pts_list)
+        ros_cluster = pcl_to_ros(pcl_cluster)
+        # Compute the associated feature vector
 
-    #     chists = compute_color_histograms(ros_cluster, using_hsv=True)
-    #     normals = get_normals(ros_cluster)
-    #     nhists = compute_normal_histograms(normals)
-    #     feature = np.concatenate((chists, nhists))
+        chists = compute_color_histograms(ros_cluster, using_hsv=True)
+        normals = get_normals(ros_cluster)
+        nhists = compute_normal_histograms(normals)
+        feature = np.concatenate((chists, nhists))
 
-    #     # Make the prediction
-    #     prediction = clf.predict(scaler.transform(feature.reshape(1, -1)))
-    #     label = encoder.inverse_transform(prediction)[0]
-    #     detected_objects_labels.append(label)
+        # Make the prediction
+        prediction = clf.predict(scaler.transform(feature.reshape(1, -1)))
+        label = encoder.inverse_transform(prediction)[0]
 
-    #     # Publish a label into RViz
+        detected_objects_labels.append(label)
 
-    #     label_pos = list(white_cloud[pts_list[0]])
-    #     label_pos[2] += 0.4
-    #     object_markers_pub.publish(make_label(label, label_pos, index))
+        # Publish a label into RViz
 
-    #     # Add the detected object to the list of detected objects.
-    #     do = DetectedObject()
-    #     do.label = label
-    #     do.cloud = ros_cluster
-    #     detected_objects.append(do)
+        label_pos = list(white_cloud[pts_list[0]])
+        label_pos[2] += 0.4
+        object_markers_pub.publish(make_label(label, label_pos, index))
+
+        # Add the detected object to the list of detected objects.
+        do = DetectedObject()
+        do.label = label
+        do.cloud = ros_cluster
+        detected_objects.append(do)
+
+    rospy.loginfo('Detected {} objects: {}'.format(len(detected_objects_labels), detected_objects_labels))
 
     # Publish the list of detected objects
+    detected_objects_pub.publish(detected_objects)
 
     # Suggested location for where to invoke your pr2_mover() function within pcl_callback()
     # Could add some logic to determine whether or not your object detections are robust
     # before calling pr2_mover()
     # try:
-    #     pr2_mover(detected_objects_list)
+    #     pr2_mover(detected_objects)
     # except rospy.ROSInterruptException:
     #     pass
 
@@ -234,9 +245,19 @@ if __name__ == '__main__':
     # TODO: Create Publishers
     pcl_objects_pub = rospy.Publisher("/pcl_objects", PointCloud2, queue_size=1)
     pcl_table_pub = rospy.Publisher("/pcl_table", PointCloud2, queue_size=1)
-    pcl_cluster_pub = rospy.Publisher("/pcl_cluster", PointCloud2, queue_size=1)    
+    pcl_cluster_pub = rospy.Publisher("/pcl_cluster", PointCloud2, queue_size=1)
+    object_markers_pub = rospy.Publisher("/object_markers", Marker, queue_size=1)
+    detected_objects_pub = rospy.Publisher("/detected_markers", DetectedObjectsArray, queue_size=1)
 
     # TODO: Load Model From disk
+    model = pickle.load(open('./model.sav', 'rb'))
+    clf = model['classifier']
+    print(clf)
+    encoder = LabelEncoder()
+    encoder.classes = model['classes']
+    y_train = [c for l in [[x] * 50 for x in encoder.classes] for c in l]
+    print(encoder.fit_transform(y_train))
+    scaler = model['scaler']
 
     # Initialize color_list
     get_color_list.color_list = []
