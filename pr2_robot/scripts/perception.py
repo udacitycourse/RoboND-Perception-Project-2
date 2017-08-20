@@ -69,7 +69,7 @@ def pcl_callback(pcl_msg):
     
     # TODO: Voxel Grid Downsampling
     vox = pcl_filtered.make_voxel_grid_filter()
-    LEAF_SIZE = 0.005
+    LEAF_SIZE = 0.0035
     vox.set_leaf_size(LEAF_SIZE, LEAF_SIZE, LEAF_SIZE)
     pcl_filtered = vox.filter()
 
@@ -114,7 +114,7 @@ def pcl_callback(pcl_msg):
     # tolerances for distance threshold (TWEAK THESE)
     ec.set_ClusterTolerance(.01)
     ec.set_MinClusterSize(100)
-    ec.set_MaxClusterSize(3000)
+    ec.set_MaxClusterSize(4000)
 
     # search k-d tree for clusters
     ec.set_SearchMethod(tree)
@@ -189,31 +189,82 @@ def pcl_callback(pcl_msg):
     # Suggested location for where to invoke your pr2_mover() function within pcl_callback()
     # Could add some logic to determine whether or not your object detections are robust
     # before calling pr2_mover()
-    # try:
-    #     pr2_mover(detected_objects)
-    # except rospy.ROSInterruptException:
-    #     pass
+    try:
+        pr2_mover(detected_objects)
+    except rospy.ROSInterruptException:
+        pass
 
 # function to load parameters and request PickPlace service
 def pr2_mover(object_list):
 
     # TODO: Initialize variables
+    test_scene_num = Int32()
+    test_scene_num.data = 2 # is there a way to determine this automatically?
+    object_name = String()
+    arm_name = String()
+    pick_pose = Pose()
+    place_pose = Pose()
+
+    yaml_list = []
+
+    # build a dictionary from object labels to centroids
+    centroids = {}
+    for object in object_list:
+        label = object.label
+        points_arr = ros_to_pcl(object.cloud).to_array()
+        centroids[label] = np.mean(points_arr, axis=0)[:3]
+        centroids[label] = [np.asscalar(c) for c in centroids[label]]
 
     # TODO: Get/Read parameters
 
+    object_list_param = rospy.get_param('/object_list')
+    dropbox_param = rospy.get_param('/dropbox')
+
     # TODO: Parse parameters into individual variables
+
+    left_box_pos = None
+    right_box_pos = None
+    for box in dropbox_param:
+        if box['name'] == 'left':
+            left_box_pos = box['position']
+        elif box['name'] == 'right':
+            right_box_pos = box['position']
 
     # TODO: Rotate PR2 in place to capture side tables for the collision map
 
     # TODO: Loop through the pick list
 
+    for object in object_list_param:
+
+        object_name_param = object['name']
+        object_group_param = object['group']
+
+        object_name.data = object_name_param
+
+        arm_name.data = 'left' if object_name_param == 'red' else 'right'
+
         # TODO: Get the PointCloud for a given object and obtain it's centroid
+        if object_name_param in centroids:
+            centroid = centroids[object_name_param]
+        else:
+            print("Failed to identify {} in detected objects list")
+            continue
+
+        # pick_pose.position = Point()
+        pick_pose.position.x = centroid[0]
+        pick_pose.position.y = centroid[1]
+        pick_pose.position.z = centroid[2]
 
         # TODO: Create 'place_pose' for the object
-
-        # TODO: Assign the arm to be used for pick_place
+        target_box = left_box_pos if arm_name.data == 'left' else right_box_pos
+        
+        # place_pose.position = Point()
+        place_pose.position.x = target_box[0]
+        place_pose.position.y = target_box[1]
+        place_pose.position.z = target_box[2]
 
         # TODO: Create a list of dictionaries (made with make_yaml_dict()) for later output to yaml format
+        yaml_list.append(make_yaml_dict(test_scene_num, arm_name, object_name, pick_pose, place_pose))
 
         # Wait for 'pick_place_routine' service to come up
         rospy.wait_for_service('pick_place_routine')
@@ -222,7 +273,7 @@ def pr2_mover(object_list):
             pick_place_routine = rospy.ServiceProxy('pick_place_routine', PickPlace)
 
             # TODO: Insert your message variables to be sent as a service request
-            resp = pick_place_routine(TEST_SCENE_NUM, OBJECT_NAME, WHICH_ARM, PICK_POSE, PLACE_POSE)
+            resp = pick_place_routine(test_scene_num, object_name, arm_name, pick_pose, place_pose)
 
             print ("Response: ",resp.success)
 
@@ -230,8 +281,7 @@ def pr2_mover(object_list):
             print "Service call failed: %s"%e
 
     # TODO: Output your request parameters into output yaml file
-
-
+    send_to_yaml('output_{}.yaml'.format(test_scene_num.data), yaml_list)
 
 if __name__ == '__main__':
 
@@ -255,6 +305,7 @@ if __name__ == '__main__':
     encoder = LabelEncoder()
     encoder.classes = model['classes']
     y_train = [c for l in [[x] * 50 for x in encoder.classes] for c in l]
+    print(encoder.classes)
     encoder.fit_transform(y_train)
     scaler = model['scaler']
 
