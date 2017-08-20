@@ -33,6 +33,7 @@ if __name__ == '__main__':
               'soap2',              
               'sticky_notes',
     ]
+    n_examples = 50
 
     # Disable gravity and delete the ground plane
     initial_setup()
@@ -41,7 +42,7 @@ if __name__ == '__main__':
     for model_name in models:
         spawn_model(model_name)
 
-        for i in range(50):
+        for i in range(n_examples):
             # make five attempts to get a valid a point cloud then give up
             sample_was_good = False
             try_count = 0
@@ -66,5 +67,5 @@ if __name__ == '__main__':
         delete_model()
 
 
-    pickle.dump(labeled_features, open('training_set.sav', 'wb'))
+    pickle.dump(labeled_features, open('training_set_{}.sav'.format(n_examples), 'wb'))
 
