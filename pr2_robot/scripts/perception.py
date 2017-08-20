@@ -78,7 +78,7 @@ def pcl_callback(pcl_msg):
     filter_axis = 'z'
     passthrough_Z.set_filter_field_name(filter_axis)
     axis_min = 0.6
-    axis_max = 0.85
+    axis_max = 1.0
     passthrough_Z.set_filter_limits(axis_min, axis_max)
     pcl_filtered = passthrough_Z.filter()
 
@@ -87,7 +87,7 @@ def pcl_callback(pcl_msg):
     filter_axis = 'x'
     passthrough_X.set_filter_field_name(filter_axis)
     axis_min = .3
-    axis_max = 1.0
+    axis_max = 1.1
     passthrough_X.set_filter_limits(axis_min, axis_max)
     pcl_filtered = passthrough_X.filter()
 
@@ -113,8 +113,8 @@ def pcl_callback(pcl_msg):
     ec = white_cloud.make_EuclideanClusterExtraction()
     # tolerances for distance threshold (TWEAK THESE)
     ec.set_ClusterTolerance(.01)
-    ec.set_MinClusterSize(200)
-    ec.set_MaxClusterSize(2000)
+    ec.set_MinClusterSize(100)
+    ec.set_MaxClusterSize(3000)
 
     # search k-d tree for clusters
     ec.set_SearchMethod(tree)
@@ -252,11 +252,10 @@ if __name__ == '__main__':
     # TODO: Load Model From disk
     model = pickle.load(open('./model.sav', 'rb'))
     clf = model['classifier']
-    print(clf)
     encoder = LabelEncoder()
     encoder.classes = model['classes']
     y_train = [c for l in [[x] * 50 for x in encoder.classes] for c in l]
-    print(encoder.fit_transform(y_train))
+    encoder.fit_transform(y_train)
     scaler = model['scaler']
 
     # Initialize color_list
