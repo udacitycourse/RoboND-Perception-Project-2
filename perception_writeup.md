@@ -58,5 +58,4 @@ You will find the `output_*.yaml` files with associated `PickPlace` requests in 
 
 For the final integration of cluster data and object recognition into the `pr2_mover` routine, I used a dictionary to hold the calculated centroids of each cluster, indexed by label. This allowed me to look up the appropriate centroid while iterating over the list of objects from the incoming pick list.
 
-
-
+Due to some limitations in the simulator environment and its configuration, I have elected to forego the challenge portion of this project for the time being in favor of continuing with the course material. If the appropriate improvements are made at in future, I would be interested to pursue it.
