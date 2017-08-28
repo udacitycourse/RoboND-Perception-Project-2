@@ -4,6 +4,9 @@ import itertools
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import svm
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn import cross_validation
 from sklearn import metrics
@@ -61,28 +64,7 @@ y_train = np.array(label_list)
 encoder = LabelEncoder()
 y_train = encoder.fit_transform(y_train)
 
-# Create classifier
-# cw_dict = {
-#     'biscuits': 1.3,
-#     'book': 1.4,
-#     'eraser': 1.2,
-#     'glue': 1.2,
-#     'snacks': 1.0,
-#     'soap': 1.0,
-#     'soap2': 1.0,
-#     'sticky_notes': 1.0}
-
-cw_dict = {
-    0: 100,
-    1: 10,
-    2: 10,
-    3: 10,
-    4: 0.25,
-    5: 0.25,
-    6: 0.25,
-    7: 0.25}
-
-clf = svm.SVC(kernel='linear')
+clf = RandomForestClassifier()
 
 # Set up 5-fold cross-validation
 kf = cross_validation.KFold(len(X_train),
