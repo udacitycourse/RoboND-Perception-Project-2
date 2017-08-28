@@ -71,7 +71,8 @@ find_package(Boost REQUIRED)
 add_service_files(
   FILES
   PickPlace.srv
-	Grasp.srv
+  Grasp.srv
+  GetNormals.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -86,6 +87,7 @@ generate_messages(
  DEPENDENCIES
  std_msgs
  geometry_msgs
+ sensor_msgs
 )
 
 ################################################

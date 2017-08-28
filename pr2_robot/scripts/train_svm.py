@@ -127,9 +127,13 @@ plt.figure()
 plot_confusion_matrix(confusion_matrix, classes=encoder.classes_,
                       title='Confusion matrix, without normalization')
 
+plt.savefig('raw_confusion.png')
+
 # Plot normalized confusion matrix
 plt.figure()
 plot_confusion_matrix(confusion_matrix, classes=encoder.classes_, normalize=True,
                       title='Normalized confusion matrix')
+
+plt.savefig('normalized_confusion.png')
 
 plt.show()

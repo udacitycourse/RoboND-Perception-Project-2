@@ -10,7 +10,7 @@ from sensor_stick.training_helper import initial_setup
 from sensor_stick.training_helper import capture_sample
 from sensor_stick.features import compute_color_histograms
 from sensor_stick.features import compute_normal_histograms
-from sensor_stick.srv import GetNormals
+from pr2_robot.srv import GetNormals
 from geometry_msgs.msg import Pose
 from sensor_msgs.msg import PointCloud2
 
@@ -33,7 +33,7 @@ if __name__ == '__main__':
               'soap2',              
               'sticky_notes',
     ]
-    n_examples = 50
+    n_examples = 10
 
     # Disable gravity and delete the ground plane
     initial_setup()
