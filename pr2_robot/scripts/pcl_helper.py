@@ -21,7 +21,6 @@ from sensor_msgs.msg import PointCloud2, PointField
 from std_msgs.msg import Header
 from random import randint
 
-
 def random_color_gen():
     """ Generates a random color
     
