@@ -1,3 +1,4 @@
 */*~
 *~
 pr2_robot/scripts/rospy_message_converter/*.pyc
+pr2_robot/scripts/sensor_stick/*.pyc
