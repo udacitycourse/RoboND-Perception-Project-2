@@ -268,7 +268,8 @@ def pr2_mover(object_list, pcl_table):
         if object_name_param in centroids:
             centroid = centroids[object_name_param]
         else:
-            print("Failed to identify {} in detected objects list")
+            print("Failed to identify {} in detected objects list".format(
+                object_name_param))
             continue
 
         # pick_pose.position = Point()

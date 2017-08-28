@@ -64,9 +64,11 @@ y_train = np.array(label_list)
 encoder = LabelEncoder()
 y_train = encoder.fit_transform(y_train)
 
+# using a random forest classifier instead of the specified
+# SVM for improved accuracy without overfitting
 clf = RandomForestClassifier()
 
-# Set up 5-fold cross-validation
+# Set up 10-fold cross-validation
 kf = cross_validation.KFold(len(X_train),
                             n_folds=10,
                             shuffle=True,
